@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http://www.w3.org/2000/svg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Cpath%20fill%3D%22%23e50914%22%20fill-rule%3D%22evenodd%22%20d%3D%22M7%205L14%205A11%2011%200%200%201%2014%2027L7%2027Z%20M12%2010L14%2010A6%206%200%200%201%2014%2022L12%2022Z%22/%3E%3C/svg%3E">
+    <title>Dylan Dog Tracker</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: #121212;
+            color: #fff;
+            text-align: center;
+            margin: 0;
+            padding: 15px;
+        }
+
+        h1 {
+            color: #e50914;
+            margin: 10px 0 2px 0;
+            letter-spacing: 1px;
+        }
+
+        p {
+            color: #aaa;
+            font-size: 14px;
+            margin-bottom: 12px;
+        }
+
+        .title-header {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .info-button {
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 22px;
+            height: 22px;
+            padding: 0;
+            border: 1px solid #aaa;
+            border-radius: 50%;
+            background: transparent;
+            color: #aaa;
+            font-family: Georgia, serif;
+            font-size: 15px;
+            font-style: italic;
+            line-height: 20px;
+        }
+
+        .info-button:hover {
+            border-color: #fff;
+            color: #fff;
+        }
+
+        .info-modal {
+            width: min(420px, calc(100% - 32px));
+            padding: 24px;
+            border: 1px solid #444;
+            border-radius: 10px;
+            background: #222;
+            color: #fff;
+            text-align: left;
+        }
+
+        .info-modal::backdrop {
+            background: rgb(0 0 0 / 70%);
+        }
+
+        .info-modal h2 {
+            margin: 0 0 12px;
+            color: #e50914;
+            font-size: 20px;
+        }
+
+        .info-modal p {
+            line-height: 1.5;
+        }
+
+        .info-modal form {
+            text-align: right;
+        }
+
+        .menu-bar {
+            font-size: 13px;
+            margin-bottom: 15px;
+            color: #777;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: nowrap;
+            white-space: nowrap;
+        }
+
+        .menu-bar a {
+            color: #888;
+            text-decoration: underline;
+            cursor: pointer;
+        }
+
+        .menu-bar a:hover {
+            color: #fff;
+        }
+
+        .menu-bar label {
+            font-size: 12px;
+            color: #aaa;
+        }
+
+        .menu-bar input[type="number"] {
+            width: 60px;
+            padding: 3px 5px;
+            font-size: 12px;
+            background: #222;
+            border: 1px solid #444;
+            color: #fff;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .last-update {
+            font-size: 12px;
+            color: #777;
+            margin-bottom: 15px;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin: 0 0 20px 0;
+            flex-wrap: nowrap;
+            white-space: nowrap;
+        }
+
+        input[type="text"] {
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #444;
+            background: #222;
+            color: #fff;
+            font-size: 15px;
+            width: 220px;
+            text-align: center;
+        }
+
+        .controls input[type="text"] {
+            width: auto;
+            flex: 1 1 0;
+            min-width: 0;
+            max-width: 220px;
+        }
+
+        .controls button {
+            flex: 0 0 auto;
+        }
+
+        button {
+            padding: 10px 15px;
+            border-radius: 6px;
+            border: none;
+            background: #333;
+            color: #fff;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        button.active {
+            background: #e50914;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(65px, 1fr));
+            gap: 8px;
+        }
+
+        .box {
+            background: #2a2a2a;
+            padding: 8px 4px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            user-select: none;
+            border: 1px solid #333;
+            font-size: 13px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            min-height: 55px;
+        }
+
+        .box .num {
+            font-size: 14px;
+        }
+
+        .box .title {
+            font-size: 9px;
+            font-weight: normal;
+            color: #bbb;
+            margin-top: 3px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .box.owned {
+            background: #2e7d32;
+            border-color: #4caf50;
+            color: #fff;
+        }
+
+        .box.owned .title {
+            color: #e0e0e0;
+        }
+
+        .box.highlight {
+            outline: 3px solid #ffeb3b;
+            border-color: #ffeb3b;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="title-header">
+        <button class="info-button" type="button" aria-label="Informazioni sulla perdita dei dati" aria-haspopup="dialog" onclick="document.getElementById('dataWarning').showModal()">i</button>
+        <h1>DYLAN DOG</h1>
+    </div>
+    <dialog class="info-modal" id="dataWarning" aria-labelledby="dataWarningTitle">
+        <h2 id="dataWarningTitle">Attenzione!</h2>
+        <p>I tuoi fumetti sono salvati solo in questo browser: se cancelli i dati del browser, usi la navigazione in incognito o cambi browser, potresti perderli.</p>
+        <p>Pertanto, se vuoi cancellarli, prima ricordati di esportare il file di backup (.json) e di conservarlo in un posto sicuro: così potrai ripristinare la tua collezione quando vuoi!</p>
+        <form method="dialog"><button type="submit">Ho capito</button></form>
+    </dialog>
+    <p id="stats">Loading...</p>
+
+    <div class="menu-bar">
+        <a onclick="exportData()">Export</a> |
+        <a onclick="document.getElementById('importFile').click()">Import</a>
+        <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData(event)"> |
+        <label>Max Comics: <input type="number" id="maxComicsInput" min="100" max="1000" onchange="updateMaxComics(this.value)"></label>
+    </div>
+
+    <div class="last-update" id="lastUpdate"></div>
+
+    <div class="controls">
+        <input type="text" id="searchInput" placeholder="Search number or title..." oninput="render()">
+        <button id="filterBtn" onclick="toggleFilter()">Show Missing Only</button>
+    </div>
+
+    <div class="grid" id="grid"></div>
+
+    <script>
+        // Known landmark titles (you can add as many as you like to this dictionary)
+        const TITLES = {
+            1: "L'alba dei morti viventi",
+            2: "Jack lo squartatore",
+            3: "Notti della luna piena",
+            10: "Attraverso lo specchio",
+            100: "La storia di Dylan Dog",
+            101: "La porta dell'inferno",
+            200: "Il numero 200",
+            300: "Ritratto di famiglia",
+            399: "Oggi sposi",
+            400: "E ora, l'Apocalisse!",
+        };
+
+        let totalComics = parseInt(localStorage.getItem('dd_max_comics') || '500');
+        let owned = JSON.parse(localStorage.getItem('dd_owned') || '[]');
+        let showMissingOnly = false;
+
+        document.getElementById('maxComicsInput').value = totalComics;
+
+        function updateLastUpdateDisplay() {
+            const iso = localStorage.getItem('dd_last_update');
+            const date = iso ? new Date(iso) : null;
+            const formatted = date && !isNaN(date)
+                ? date.toLocaleString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+                : null;
+            document.getElementById('lastUpdate').textContent =
+                formatted ? `Last update: ${formatted}` : 'Last update: never';
+        }
+
+        function setLastUpdate() {
+            localStorage.setItem('dd_last_update', new Date().toISOString());
+            updateLastUpdateDisplay();
+        }
+
+        function updateMaxComics(val) {
+            const num = parseInt(val);
+            if (num && num > 0) {
+                totalComics = num;
+                localStorage.setItem('dd_max_comics', totalComics);
+                setLastUpdate();
+                render();
+            }
+        }
+
+        function render() {
+            const grid = document.getElementById('grid');
+            const searchVal = document.getElementById('searchInput').value.trim().toLowerCase();
+            grid.innerHTML = '';
+
+            for (let i = 1; i <= totalComics; i++) {
+                const isOwned = owned.includes(i);
+                const title = TITLES[i] || '';
+
+                if (showMissingOnly && isOwned) continue;
+
+                // Filter logic: matches comic number OR title search
+                if (searchVal) {
+                    const numMatch = i.toString() === searchVal;
+                    const titleMatch = title.toLowerCase().includes(searchVal);
+                    if (!numMatch && !titleMatch) continue;
+                }
+
+                const div = document.createElement('div');
+                div.className = 'box ' + (isOwned ? 'owned' : '');
+                if (searchVal && (i.toString() === searchVal || (title && title.toLowerCase().includes(searchVal)))) {
+                    div.classList.add('highlight');
+                }
+
+                div.title = title ? `#${i} - ${title}` : `#${i}`;
+
+                div.innerHTML = `
+          <span class="num">#${i}</span>
+          ${title ? `<span class="title">${title}</span>` : ''}
+        `;
+
+                div.id = 'comic-' + i;
+                div.onclick = () => toggle(i);
+                grid.appendChild(div);
+            }
+
+            document.getElementById('stats').textContent = `I got ${owned.length} of ${totalComics} comics! (${totalComics - owned.length} missing)`;
+        }
+
+        function toggle(num) {
+            if (owned.includes(num)) {
+                owned = owned.filter(n => n !== num);
+            } else {
+                owned.push(num);
+            }
+            localStorage.setItem('dd_owned', JSON.stringify(owned));
+            setLastUpdate();
+            render();
+        }
+
+        function toggleFilter() {
+            showMissingOnly = !showMissingOnly;
+            const btn = document.getElementById('filterBtn');
+            btn.textContent = showMissingOnly ? "Show All Comics" : "Show Missing Only";
+            btn.classList.toggle('active', showMissingOnly);
+            render();
+        }
+
+        function exportData() {
+            const backupObj = { owned, totalComics };
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupObj, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", "dylan_dog_backup.json");
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
+
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    if (Array.isArray(importedData)) {
+                        owned = importedData;
+                    } else if (importedData.owned && Array.isArray(importedData.owned)) {
+                        owned = importedData.owned;
+                        if (importedData.totalComics) {
+                            totalComics = importedData.totalComics;
+                            document.getElementById('maxComicsInput').value = totalComics;
+                            localStorage.setItem('dd_max_comics', totalComics);
+                        }
+                    }
+                    localStorage.setItem('dd_owned', JSON.stringify(owned));
+                    setLastUpdate();
+                    render();
+                    alert(`Successfully restored ${owned.length} comics!`);
+                } catch (err) {
+                    alert('Error reading backup file.');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        updateLastUpdateDisplay();
+        render();
+    </script>
+</body>
+
+</html>

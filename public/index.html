@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http://www.w3.org/2000/svg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Cpath%20fill%3D%22%23e50914%22%20fill-rule%3D%22evenodd%22%20d%3D%22M7%205L14%205A11%2011%200%200%201%2014%2027L7%2027Z%20M12%2010L14%2010A6%206%200%200%201%2014%2022L12%2022Z%22/%3E%3C/svg%3E">
+    <title>Dylan Dog Tracker</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <div class="title-header">
+        <button class="info-button" type="button" aria-label="Informazioni sulla perdita dei dati" aria-haspopup="dialog" onclick="document.getElementById('dataWarning').showModal()">i</button>
+        <h1>DYLAN DOG</h1>
+    </div>
+    <dialog class="info-modal" id="dataWarning" aria-labelledby="dataWarningTitle">
+        <h2 id="dataWarningTitle">Attenzione!</h2>
+        <p>I tuoi fumetti sono salvati sul server: resteranno disponibili anche se cambi browser o dispositivo.</p>
+        <p>Puoi comunque esportare un file di backup (.json) e conservarlo in un posto sicuro, così potrai ripristinare la tua collezione quando vuoi.</p>
+        <form method="dialog"><button type="submit">Ho capito</button></form>
+    </dialog>
+    <p id="stats">Loading...</p>
+
+    <div class="menu-bar">
+        <a onclick="exportData()">Export</a> |
+        <a onclick="document.getElementById('importFile').click()">Import</a>
+        <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData(event)"> |
+        <label>Max Comics: <input type="number" id="maxComicsInput" min="100" max="1000" onchange="updateMaxComics(this.value)"></label>
+    </div>
+
+    <div class="last-update" id="lastUpdate"></div>
+
+    <div class="controls">
+        <input type="text" id="searchInput" placeholder="Search number or title..." oninput="render()">
+        <button id="filterBtn" onclick="toggleFilter()">Show Missing Only</button>
+    </div>
+
+    <div class="grid" id="grid"></div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>

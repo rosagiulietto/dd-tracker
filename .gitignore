@@ -1,0 +1,16 @@
+# SQLite database (never commit your collection)
+data/*.sqlite
+data/*.sqlite-shm
+data/*.sqlite-wal
+data/*.sqlite-journal
+
+# Old stdoutless backup artifacts
+*.bak
+
+# Editor / OS noise
+.DS_Store
+Thumbs.db
+
+# My stuff
+materiale
+MODIFICHE.md
