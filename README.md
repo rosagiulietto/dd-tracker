@@ -95,3 +95,9 @@ The API is intentionally small and has no framework/dependencies:
 - `POST /api.php?action=import` with `{"owned": [1, 2], "totalComics": 500}` — replace collection
 
 Each successful response includes the updated state as JSON. SQLite's unique primary key prevents duplicate comic numbers.
+
+## Cover thumbnails (2025-01-09)
+
+- Added comic cover thumbnails inside each grid card (`div.box`), loaded from `images/products_mapping.json`.
+- Thumbnails use `images/` path relative to the page; a `public/images -> ../images` symlink was added so local dev and Nginx deployment both resolve covers correctly.
+- Thumbnails are lazy-loaded (`loading="lazy"`), displayed with `height: 45px; object-fit: cover`, and appear only when a mapping exists for that comic number.

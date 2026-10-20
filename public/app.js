@@ -15,8 +15,105 @@ const TITLES = {
 let owned = [];
 let totalComics = 500;
 let showMissingOnly = false;
+let numberToImage = {};
+
+function isPlaceholderFile(file) {
+    return /blank|placeholder|missing/i.test(file);
+}
+
+async function loadProductsMapping() {
+    try {
+        // Cache-bust so an updated mapping is picked up immediately.
+        const res = await fetch(`images/products_mapping.json?v=${Date.now()}`, { cache: 'no-store' });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const map = await res.json();
+
+        numberToImage = {};
+        for (const [file, num] of Object.entries(map)) {
+            const n = Number(num);
+            if (!n) continue;
+
+            const current = numberToImage[n];
+            // Prefer a real cover over a blank/placeholder image; otherwise keep
+            // the first entry (the mapping is ordered newest-first).
+            if (!current || (isPlaceholderFile(current) && !isPlaceholderFile(file))) {
+                numberToImage[n] = file;
+            }
+        }
+    } catch (e) {
+        console.warn('Failed to load product mapping', e);
+    }
+}
 
 const $ = (id) => document.getElementById(id);
+
+// --- Passkey gate -----------------------------------------------------------
+
+function showPasskeyGate(message = '') {
+    const overlay = $('passkeyOverlay');
+    const error = $('passkeyError');
+
+    overlay.hidden = false;
+    if (message) {
+        error.textContent = message;
+        error.hidden = false;
+    } else {
+        error.hidden = true;
+    }
+
+    setTimeout(() => $('passkeyInput').focus(), 0);
+}
+
+function hidePasskeyGate() {
+    $('passkeyOverlay').hidden = true;
+    $('passkeyInput').value = '';
+}
+
+async function checkAuth() {
+    try {
+        const res = await fetch('api.php?action=auth', { cache: 'no-store' });
+        const data = await res.json().catch(() => ({}));
+        return !!(res.ok && data.ok && data.authenticated);
+    } catch (e) {
+        return false;
+    }
+}
+
+async function submitPasskey(event) {
+    event.preventDefault();
+
+    const input = $('passkeyInput');
+    const button = $('passkeySubmit');
+    const error = $('passkeyError');
+    const passkey = input.value;
+
+    if (!passkey) return;
+
+    button.disabled = true;
+    error.hidden = true;
+
+    try {
+        const res = await fetch('api.php?action=auth', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ passkey }),
+        });
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok || data.ok !== true) {
+            throw new Error(data.error || 'Invalid passkey');
+        }
+
+        hidePasskeyGate();
+        await startApp();
+    } catch (err) {
+        error.textContent = 'Passkey non valida. Riprova.';
+        error.hidden = false;
+        input.select();
+    } finally {
+        button.disabled = false;
+    }
+}
 
 // --- API helper -------------------------------------------------------------
 
@@ -32,6 +129,10 @@ async function api(action, payload) {
 
     const response = await fetch(url, options);
     const data = await response.json().catch(() => ({}));
+
+    if (response.status === 401) {
+        showPasskeyGate('Inserisci la passkey per continuare.');
+    }
 
     if (!response.ok || data.ok === false) {
         throw new Error(data.error || ('HTTP ' + response.status));
@@ -85,12 +186,25 @@ function render() {
         }
 
         div.title = title ? `#${i} - ${title}` : `#${i}`;
+        const imgFile = numberToImage[i];
         div.innerHTML = `
+          ${imgFile ? `<img class="thumb" src="images/${imgFile}" alt="" loading="lazy">` : ''}
           <span class="num">#${i}</span>
-          ${title ? `<span class="title">${title}</span>` : ''}
         `;
         div.id = 'comic-' + i;
         div.onclick = () => toggle(i);
+
+        const thumb = div.querySelector('.thumb');
+        if (thumb) {
+            // A mapping entry can reference an image that isn't present locally;
+            // hide the broken thumbnail instead of showing a broken-image icon.
+            thumb.onerror = () => thumb.remove();
+            thumb.onclick = (e) => {
+                e.stopPropagation();
+                openLightbox(i);
+            };
+        }
+
         grid.appendChild(div);
     }
 
@@ -107,6 +221,28 @@ async function toggle(num) {
     } catch (error) {
         alert('Could not save: ' + error.message);
     }
+}
+
+function openLightbox(num) {
+    const imgFile = numberToImage[num];
+    if (!imgFile) return;
+
+    const overlay = document.createElement('div');
+    overlay.className = 'lightbox';
+    overlay.innerHTML = `
+        <button class="close-btn" aria-label="Close">&times;</button>
+        <img src="images/${imgFile}" alt="Cover #${num}">
+    `;
+    overlay.onclick = (e) => {
+        if (e.target === overlay || e.target.closest('.close-btn')) {
+            overlay.remove();
+        }
+    };
+    const fullImg = overlay.querySelector('img');
+    if (fullImg) {
+        fullImg.onerror = () => overlay.remove();
+    }
+    document.body.appendChild(overlay);
 }
 
 async function updateMaxComics(value) {
@@ -182,8 +318,9 @@ function importData(event) {
 
 // --- Startup ----------------------------------------------------------------
 
-async function loadState() {
+async function startApp() {
     try {
+        await loadProductsMapping();
         const data = await api('state');
         applyState(data.state);
         render();
@@ -192,4 +329,14 @@ async function loadState() {
     }
 }
 
-loadState();
+async function boot() {
+    $('passkeyForm').addEventListener('submit', submitPasskey);
+
+    if (await checkAuth()) {
+        await startApp();
+    } else {
+        showPasskeyGate();
+    }
+}
+
+boot();

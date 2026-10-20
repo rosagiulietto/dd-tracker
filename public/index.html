@@ -39,6 +39,16 @@
 
     <div class="grid" id="grid"></div>
 
+    <div class="passkey-overlay" id="passkeyOverlay" hidden>
+        <form class="passkey-card" id="passkeyForm">
+            <h2>Chiave richiesta</h2>
+            <p>Inserisci la chiave per aprire<br>il tuo dd-tracker.</p>
+            <input type="password" id="passkeyInput" placeholder="Passkey" autocomplete="current-password" required>
+            <p class="passkey-error" id="passkeyError" hidden></p>
+            <button type="submit" id="passkeySubmit">Entra</button>
+        </form>
+    </div>
+
     <script src="app.js"></script>
 </body>
 

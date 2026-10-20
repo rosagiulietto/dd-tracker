@@ -14,7 +14,7 @@ declare(strict_types=1);
  * {"ok": false, "error": "..."}.
  */
 
-require __DIR__ . '/../src/db.php';
+require __DIR__ . '/../src/auth.php';
 
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
@@ -55,6 +55,40 @@ if ($method === 'POST') {
 }
 
 try {
+    // --- Passkey gate -------------------------------------------------------
+    if ($action === 'auth') {
+        if ($method === 'GET') {
+            respond(['ok' => true, 'authenticated' => auth_is_logged_in()]);
+        }
+
+        if ($method !== 'POST') {
+            fail('Method not allowed', 405);
+        }
+
+        $passkey = (string) ($body['passkey'] ?? '');
+        if (!auth_check_passkey($passkey)) {
+            // Slow down brute-force attempts a little.
+            usleep(300000);
+            fail('Invalid passkey', 401);
+        }
+
+        auth_set_cookie();
+        respond(['ok' => true, 'authenticated' => true]);
+    }
+
+    if ($action === 'logout') {
+        if ($method !== 'POST') {
+            fail('Method not allowed', 405);
+        }
+
+        auth_clear_cookie();
+        respond(['ok' => true, 'authenticated' => false]);
+    }
+
+    if (!auth_is_logged_in()) {
+        fail('Authentication required', 401);
+    }
+
     if ($method === 'GET') {
         if ($action === null || $action === 'state') {
             ok();
@@ -86,7 +120,6 @@ try {
 
             touch_last_update();
             ok();
-            // no break (ok() exits)
 
         case 'max':
             $total = (int) ($body['totalComics'] ?? 0);
